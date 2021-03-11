@@ -48,6 +48,11 @@ UART_HandleTypeDef huart2;
 /* USER CODE BEGIN PV */
 uint32_t ADCData[4]={0};
 uint32_t stopwatch =0;
+uint32_t ButtonTimeStamp = 0;
+uint32_t zero ;
+uint32_t one ;
+int interruptmode =0;
+GPIO_PinState SwitchState[2];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -105,6 +110,26 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	  SwitchState[0] = HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13);
+	  if (interruptmode == 1)
+	  {
+		  if(HAL_GetTick() - ButtonTimeStamp >= ((1000+((22695477*zero)+one)) % 10000))
+		  {
+
+			  //HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+			  //HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
+			  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
+
+			  ButtonTimeStamp = HAL_GetTick();
+			  interruptmode = 2;
+		  }
+	  }
+//	  if (interruptmode == 2)
+//	  {
+//
+//		  stopwatch = HAL_GetTick()- ButtonTimeStamp;
+//		  interruptmode = 0;
+//	  }
 
     /* USER CODE END WHILE */
 
@@ -196,7 +221,7 @@ static void MX_ADC1_Init(void)
   */
   sConfig.Channel = ADC_CHANNEL_0;
   sConfig.Rank = 1;
-  sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
+  sConfig.SamplingTime = ADC_SAMPLETIME_480CYCLES;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
   {
     Error_Handler();
@@ -320,19 +345,25 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-	uint32_t ButtonTimeStamp = 0;
+//	  SwitchState[0] = HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13);
 	if(GPIO_Pin == GPIO_PIN_13)
 	{
-		HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
-		if(HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13)==GPIO_PIN_RESET)
+		zero =ADCData[0];
+		one =ADCData[1];
+		if(interruptmode ==0)
 		{
-			if(HAL_GetTick() - ButtonTimeStamp >= ((1000+(22695477*ADCData[0])+ADCData[1])%10000))
-				{
-				ButtonTimeStamp = HAL_GetTick();
-				HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
-				}
+			//HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+			HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+			interruptmode =1;
 		}
 
+
+		if (interruptmode ==2)
+		{
+
+			stopwatch = HAL_GetTick()- ButtonTimeStamp;
+			interruptmode =0;
+		}
 	}
 }
 /* USER CODE END 4 */
