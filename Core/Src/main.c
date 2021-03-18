@@ -51,6 +51,7 @@ uint32_t stopwatch =0;
 uint32_t ButtonTimeStamp = 0;
 uint32_t zero ;
 uint32_t one ;
+uint32_t randomtime;
 int interruptmode =0;
 GPIO_PinState SwitchState[2];
 /* USER CODE END PV */
@@ -113,7 +114,7 @@ int main(void)
 	  SwitchState[0] = HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13);
 	  if (interruptmode == 1)
 	  {
-		  if(HAL_GetTick() - ButtonTimeStamp >= ((1000+((22695477*zero)+one)) % 10000))
+		  if(HAL_GetTick() - ButtonTimeStamp >= randomtime)
 		  {
 
 			  //HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
@@ -350,15 +351,20 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	{
 		zero =ADCData[0];
 		one =ADCData[1];
+		randomtime = (1000+((22695477*zero)+one)) % 10000;
 		if(interruptmode ==0)
 		{
 			//HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
 			HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
 			interruptmode =1;
 		}
-
-
-		if (interruptmode ==2)
+		else if (HAL_GPIO_ReadPin(LD2_GPIO_Port, LD2_Pin) == GPIO_PIN_RESET)
+		{
+			interruptmode =0;
+			HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
+			ButtonTimeStamp = HAL_GetTick();
+		}
+		else if (interruptmode ==2)
 		{
 
 			stopwatch = HAL_GetTick()- ButtonTimeStamp;
